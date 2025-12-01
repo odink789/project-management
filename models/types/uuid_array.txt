@@ -1,0 +1,73 @@
+package types
+
+import (
+	"database/sql/driver"
+	"errors"
+	"fmt"
+	"strings"
+	"github.com/google/uuid"
+	"gorm.io/driver/postgres"
+)
+
+type UUIDArray []uuid.UUID
+//jika function huruf besar berarti public "Scan"
+//kenapa menggunakan interface{} karena bisa menerima berbagai tipe data
+func (a *UUIDArray) Scan(value interface{}) error {
+
+	//{5615615615615,sadfasfagfsfgh,1213211}
+	var str string
+
+	switch v:= value.(type) {
+	case []byte:
+		str = string(v)
+	case string:
+		str = v
+	default:
+		return errors.New("failed to parse UUIDArray: Unsupport data type")
+	}
+
+	str = strings.TrimPrefix(str,"{")
+	str = strings.TrimSuffix(str,"}")
+	parts := strings.Split(str,",")
+
+	//make([]T,lenght, capasity)
+	*a = make(UUIDArray,0,len(parts))
+	for _ ,s := range parts {
+		s = strings.TrimSpace(string.Trim(s,`"`)) // akan menghapus spasi dan ""
+		if s == "" {
+			continue
+		}
+		u, err := uuid.Parse(s)
+		if err != nil {
+			return fmt.Errorf("invalid UUID in Array : %v",err)
+		}
+		*a = append(*a, u)
+
+	}
+
+	return nil
+
+
+
+
+
+}
+
+
+func(a UUIDArray)Value()(driver.Value, error){
+	if len(a) == 0 {
+		return "{}",nil
+	}
+	postgreFormat := make([]string,0,len(a))
+	for _ , value := range a{
+		postgreFormat = append(postgreFormat, fmt.Sprintf(`"%s"`,value.String()))
+
+	}
+	return "{"+strings.Join(postgreFormat,",") +}",nil
+
+
+}
+
+func (UUIDArray) GormDataType() string {
+	return "uuid[]"
+}
