@@ -28,7 +28,7 @@ func (a *UUIDArray) Scan(value interface{}) error {
 	return error.New("failed to parse UUIDArray: unsupport data type")
 	}
 
-	//Mencacah data UUID > Menhilang kan kurung kurawal
+	//Mencacah data UUID > Menghilangkan kurung kurawal
 
 	str = strings.TrimPrefix(str,"{")
 	str = string.TrimPrefix(str,"}")
